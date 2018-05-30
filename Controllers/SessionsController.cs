@@ -46,7 +46,7 @@ namespace gamma_wsapi.Controllers
                 using (SqlConnection conn = new SqlConnection(ConnectionString))
                 {
                     conn.Open();
-                    SqlCommand cmd = new SqlCommand("select distinct name from session order by name", conn);
+                    SqlCommand cmd = new SqlCommand("select distinct name from session order by name desc", conn);
                     using (SqlDataReader reader = cmd.ExecuteReader())
                     {
                         while (reader.Read())
@@ -64,6 +64,42 @@ namespace gamma_wsapi.Controllers
             return nameList;
         }
 
+        [Route("sessions/info")]
+        [HttpGet]
+        public IEnumerable<APISessionInfo> GetSessionInfo()
+        {
+            List<APISessionInfo> siList = new List<APISessionInfo>();
+
+            try
+            {
+                string ConnectionString = ConfigurationManager.ConnectionStrings["GammaStoreConnectionString"].ConnectionString;
+
+                using (SqlConnection conn = new SqlConnection(ConnectionString))
+                {
+                    conn.Open();
+                    SqlCommand cmd = new SqlCommand("select se.name, se.comment, se.livetime, (select COUNT(*) from spectrum sp where sp.session_name like se.name) as 'speccnt' from session se order by se.name desc", conn);
+                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            APISessionInfo si = new APISessionInfo();
+                            si.Name = reader["name"].ToString();
+                            si.Comment = reader["comment"].ToString();
+                            si.Livetime = Convert.ToDouble(reader["livetime"]);
+                            si.SpectrumCount = Convert.ToInt32(reader["speccnt"]);
+                            siList.Add(si);
+                        }
+                    }
+                }
+            }
+            catch
+            {
+                throw new HttpResponseException(HttpStatusCode.InternalServerError);
+            }
+
+            return siList;
+        }
+
         [HttpGet]
         public IEnumerable<APISession> GetSessions()
         {
@@ -78,7 +114,7 @@ namespace gamma_wsapi.Controllers
                 using (SqlConnection conn = new SqlConnection(ConnectionString))
                 {
                     conn.Open();
-                    SqlCommand cmd = new SqlCommand("select * from session order by name", conn);
+                    SqlCommand cmd = new SqlCommand("select * from session order by name desc", conn);
                     using (SqlDataReader reader = cmd.ExecuteReader())
                     {
                         while (reader.Read())
