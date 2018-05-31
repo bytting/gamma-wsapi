@@ -50,26 +50,8 @@ namespace gamma_wsapi.Controllers
                     SqlCommand cmd = new SqlCommand("select * from spectrum order by session_name, session_index", conn);
                     using (SqlDataReader reader = cmd.ExecuteReader())
                     {
-                        while (reader.Read())
-                        {
-                            APISpectrum spec = new APISpectrum();
-                            spec.SessionName = reader["session_name"].ToString();
-                            spec.SessionIndex = Convert.ToInt32(reader["session_index"]);
-                            spec.StartTime = reader["start_time"].ToString();
-                            spec.Latitude = Convert.ToDouble(reader["latitude"]);
-                            spec.Longitude = Convert.ToDouble(reader["longitude"]);
-                            spec.Altitude = Convert.ToDouble(reader["altitude"]);
-                            spec.Track = Convert.ToDouble(reader["track"]);
-                            spec.Speed = Convert.ToDouble(reader["speed"]);
-                            spec.Climb = Convert.ToDouble(reader["climb"]);
-                            spec.Livetime = Convert.ToDouble(reader["livetime"]);
-                            spec.Realtime = Convert.ToDouble(reader["realtime"]);
-                            spec.NumChannels = Convert.ToInt32(reader["num_channels"]);
-                            spec.Channels = reader["channels"].ToString();
-                            spec.Doserate = Convert.ToDouble(reader["doserate"]);
-
-                            specList.Add(spec);
-                        }
+                        while (reader.Read())                        
+                            specList.Add(new APISpectrum(reader));
                     }
                 }
             }
@@ -113,25 +95,7 @@ namespace gamma_wsapi.Controllers
                     using (SqlDataReader reader = cmd.ExecuteReader())
                     {
                         while (reader.Read())
-                        {
-                            APISpectrum spec = new APISpectrum();
-                            spec.SessionName = reader["session_name"].ToString();
-                            spec.SessionIndex = Convert.ToInt32(reader["session_index"]);
-                            spec.StartTime = reader["start_time"].ToString();
-                            spec.Latitude = Convert.ToDouble(reader["latitude"]);
-                            spec.Longitude = Convert.ToDouble(reader["longitude"]);
-                            spec.Altitude = Convert.ToDouble(reader["altitude"]);
-                            spec.Track = Convert.ToDouble(reader["track"]);
-                            spec.Speed = Convert.ToDouble(reader["speed"]);
-                            spec.Climb = Convert.ToDouble(reader["climb"]);
-                            spec.Livetime = Convert.ToDouble(reader["livetime"]);
-                            spec.Realtime = Convert.ToDouble(reader["realtime"]);
-                            spec.NumChannels = Convert.ToInt32(reader["num_channels"]);
-                            spec.Channels = reader["channels"].ToString();
-                            spec.Doserate = Convert.ToDouble(reader["doserate"]);
-
-                            specList.Add(spec);
-                        }
+                            specList.Add(new APISpectrum(reader));
                     }
                 }
             }
@@ -161,26 +125,8 @@ namespace gamma_wsapi.Controllers
                     cmd.Parameters.AddWithValue("@SessionName", name);
                     using (SqlDataReader reader = cmd.ExecuteReader())
                     {
-                        while (reader.Read())
-                        {
-                            APISpectrum spec = new APISpectrum();
-                            spec.SessionName = reader["session_name"].ToString();
-                            spec.SessionIndex = Convert.ToInt32(reader["session_index"]);
-                            spec.StartTime = reader["start_time"].ToString();
-                            spec.Latitude = Convert.ToDouble(reader["latitude"]);
-                            spec.Longitude = Convert.ToDouble(reader["longitude"]);
-                            spec.Altitude = Convert.ToDouble(reader["altitude"]);
-                            spec.Track = Convert.ToDouble(reader["track"]);
-                            spec.Speed = Convert.ToDouble(reader["speed"]);
-                            spec.Climb = Convert.ToDouble(reader["climb"]);
-                            spec.Livetime = Convert.ToDouble(reader["livetime"]);
-                            spec.Realtime = Convert.ToDouble(reader["realtime"]);
-                            spec.NumChannels = Convert.ToInt32(reader["num_channels"]);
-                            spec.Channels = reader["channels"].ToString();
-                            spec.Doserate = Convert.ToDouble(reader["doserate"]);
-
-                            specList.Add(spec);
-                        }
+                        while (reader.Read())                        
+                            specList.Add(new APISpectrum(reader));
                     }
                 }
             }
@@ -195,7 +141,7 @@ namespace gamma_wsapi.Controllers
         [HttpGet]
         public IEnumerable<APISpectrum> GetSpectrums(string name, int minIdx)
         {
-            // /spectrums/01012000_120101/3
+            // /spectrums/01012000_120101?minIdx=12
 
             List<APISpectrum> specList = new List<APISpectrum>();
 
@@ -211,26 +157,43 @@ namespace gamma_wsapi.Controllers
                     cmd.Parameters.AddWithValue("@MinIndex", minIdx);
                     using (SqlDataReader reader = cmd.ExecuteReader())
                     {
-                        while (reader.Read())
-                        {
-                            APISpectrum spec = new APISpectrum();
-                            spec.SessionName = reader["session_name"].ToString();
-                            spec.SessionIndex = Convert.ToInt32(reader["session_index"]);
-                            spec.StartTime = reader["start_time"].ToString();
-                            spec.Latitude = Convert.ToDouble(reader["latitude"]);
-                            spec.Longitude = Convert.ToDouble(reader["longitude"]);
-                            spec.Altitude = Convert.ToDouble(reader["altitude"]);
-                            spec.Track = Convert.ToDouble(reader["track"]);
-                            spec.Speed = Convert.ToDouble(reader["speed"]);
-                            spec.Climb = Convert.ToDouble(reader["climb"]);
-                            spec.Livetime = Convert.ToDouble(reader["livetime"]);
-                            spec.Realtime = Convert.ToDouble(reader["realtime"]);
-                            spec.NumChannels = Convert.ToInt32(reader["num_channels"]);
-                            spec.Channels = reader["channels"].ToString();
-                            spec.Doserate = Convert.ToDouble(reader["doserate"]);
+                        while (reader.Read())                        
+                            specList.Add(new APISpectrum(reader));
+                    }
+                }
+            }
+            catch
+            {
+                throw new HttpResponseException(HttpStatusCode.InternalServerError);
+            }
 
-                            specList.Add(spec);
-                        }
+            return specList;
+        }
+
+        [HttpGet]
+        public IEnumerable<APISpectrum> GetSpectrums(string name, int minIdx, int maxCnt)
+        {
+            // /spectrums/01012000_120101?minIdx=12&maxCnt=100
+
+            if(maxCnt < 0)
+                throw new HttpResponseException(HttpStatusCode.BadRequest);
+
+            List<APISpectrum> specList = new List<APISpectrum>();
+
+            try
+            {
+                string ConnectionString = ConfigurationManager.ConnectionStrings["GammaStoreConnectionString"].ConnectionString;
+
+                using (SqlConnection conn = new SqlConnection(ConnectionString))
+                {
+                    conn.Open();
+                    SqlCommand cmd = new SqlCommand("select top(" + maxCnt.ToString() + ") * from spectrum where session_name like @SessionName and session_index >= @MinIndex order by session_index", conn);
+                    cmd.Parameters.AddWithValue("@SessionName", name);
+                    cmd.Parameters.AddWithValue("@MinIndex", minIdx);
+                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                            specList.Add(new APISpectrum(reader));
                     }
                 }
             }
@@ -246,7 +209,8 @@ namespace gamma_wsapi.Controllers
         public IHttpActionResult GetSpectrum(string name, int id)
         {
             // /spectrums/01012000_120101/1
-            APISpectrum spec = new APISpectrum();
+
+            APISpectrum spectrum = null;
 
             try
             {
@@ -263,21 +227,7 @@ namespace gamma_wsapi.Controllers
                             return NotFound();
 
                         reader.Read();
-
-                        spec.SessionName = reader["session_name"].ToString();
-                        spec.SessionIndex = Convert.ToInt32(reader["session_index"]);
-                        spec.StartTime = reader["start_time"].ToString();
-                        spec.Latitude = Convert.ToDouble(reader["latitude"]);
-                        spec.Longitude = Convert.ToDouble(reader["longitude"]);
-                        spec.Altitude = Convert.ToDouble(reader["altitude"]);
-                        spec.Track = Convert.ToDouble(reader["track"]);
-                        spec.Speed = Convert.ToDouble(reader["speed"]);
-                        spec.Climb = Convert.ToDouble(reader["climb"]);
-                        spec.Livetime = Convert.ToDouble(reader["livetime"]);
-                        spec.Realtime = Convert.ToDouble(reader["realtime"]);
-                        spec.NumChannels = Convert.ToInt32(reader["num_channels"]);
-                        spec.Channels = reader["channels"].ToString();
-                        spec.Doserate = Convert.ToDouble(reader["doserate"]);
+                        spectrum = new APISpectrum(reader);
                     }
                 }
             }
@@ -286,12 +236,14 @@ namespace gamma_wsapi.Controllers
                 return StatusCode(HttpStatusCode.InternalServerError);
             }
             
-            return Ok(spec);
+            return Ok(spectrum);
         }
 
         [HttpPost]
         public IHttpActionResult PostSpectrum([FromBody]APISpectrum spectrum)
-        {                                    
+        {
+            // /spectrums
+
             try
             {
                 string ConnectionString = ConfigurationManager.ConnectionStrings["GammaStoreConnectionString"].ConnectionString;

@@ -49,10 +49,8 @@ namespace gamma_wsapi.Controllers
                     SqlCommand cmd = new SqlCommand("select distinct name from session order by name desc", conn);
                     using (SqlDataReader reader = cmd.ExecuteReader())
                     {
-                        while (reader.Read())
-                        {
+                        while (reader.Read())                        
                             nameList.Add(reader["name"].ToString());
-                        }
                     }
                 }
             }
@@ -81,14 +79,7 @@ namespace gamma_wsapi.Controllers
                     using (SqlDataReader reader = cmd.ExecuteReader())
                     {
                         while (reader.Read())
-                        {
-                            APISessionInfo si = new APISessionInfo();
-                            si.Name = reader["name"].ToString();
-                            si.Comment = reader["comment"].ToString();
-                            si.Livetime = Convert.ToDouble(reader["livetime"]);
-                            si.SpectrumCount = Convert.ToInt32(reader["speccnt"]);
-                            siList.Add(si);
-                        }
+                            siList.Add(new APISessionInfo(reader));
                     }
                 }
             }
@@ -117,17 +108,8 @@ namespace gamma_wsapi.Controllers
                     SqlCommand cmd = new SqlCommand("select * from session order by name desc", conn);
                     using (SqlDataReader reader = cmd.ExecuteReader())
                     {
-                        while (reader.Read())
-                        {
-                            APISession sess = new APISession();
-                            sess.Name = reader["name"].ToString();
-                            sess.IPAddress = reader["ip_address"].ToString();
-                            sess.Comment = reader["comment"].ToString();
-                            sess.Livetime = Convert.ToDouble(reader["livetime"]);
-                            sess.DetectorData = reader["detector_data"].ToString();
-
-                            sessionList.Add(sess);
-                        }
+                        while (reader.Read())                        
+                            sessionList.Add(new APISession(reader));
                     }
                 }
             }
@@ -144,7 +126,7 @@ namespace gamma_wsapi.Controllers
         {
             // /sessions/01012000_120101
 
-            APISession sess = new APISession();
+            APISession session = null;
 
             try
             {
@@ -161,12 +143,7 @@ namespace gamma_wsapi.Controllers
                             return NotFound();
 
                         reader.Read();
-
-                        sess.Name = reader["name"].ToString();
-                        sess.IPAddress = reader["ip_address"].ToString();
-                        sess.Comment = reader["comment"].ToString();
-                        sess.Livetime = Convert.ToDouble(reader["livetime"]);
-                        sess.DetectorData = reader["detector_data"].ToString();
+                        session = new APISession(reader);
                     }                    
                 }
             }
@@ -175,7 +152,7 @@ namespace gamma_wsapi.Controllers
                 return StatusCode(HttpStatusCode.InternalServerError);
             }
 
-            return Ok(sess);
+            return Ok(session);
         }
         
         [HttpGet]
@@ -183,7 +160,7 @@ namespace gamma_wsapi.Controllers
         {
             // /sessions/01012000_120101/1
 
-            APISpectrum spec = new APISpectrum();
+            APISpectrum spectrum = null;
 
             try
             {
@@ -200,21 +177,7 @@ namespace gamma_wsapi.Controllers
                             return NotFound();
 
                         reader.Read();
-
-                        spec.SessionName = reader["session_name"].ToString();
-                        spec.SessionIndex = Convert.ToInt32(reader["session_index"]);
-                        spec.StartTime = reader["start_time"].ToString();
-                        spec.Latitude = Convert.ToDouble(reader["latitude"]);
-                        spec.Longitude = Convert.ToDouble(reader["longitude"]);
-                        spec.Altitude = Convert.ToDouble(reader["altitude"]);
-                        spec.Track = Convert.ToDouble(reader["track"]);
-                        spec.Speed = Convert.ToDouble(reader["speed"]);
-                        spec.Climb = Convert.ToDouble(reader["climb"]);
-                        spec.Livetime = Convert.ToDouble(reader["livetime"]);
-                        spec.Realtime = Convert.ToDouble(reader["realtime"]);
-                        spec.NumChannels = Convert.ToInt32(reader["num_channels"]);
-                        spec.Channels = reader["channels"].ToString();
-                        spec.Doserate = Convert.ToDouble(reader["doserate"]);
+                        spectrum = new APISpectrum(reader);
                     }
                 }
             }
@@ -223,7 +186,7 @@ namespace gamma_wsapi.Controllers
                 return StatusCode(HttpStatusCode.InternalServerError);
             }
 
-            return Ok(spec);
+            return Ok(spectrum);
         }
 
         [HttpPost]

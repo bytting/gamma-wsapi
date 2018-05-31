@@ -22,11 +22,35 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Web;
 using Newtonsoft.Json;
+using System.Data.SqlClient;
 
 namespace gamma_wsapi.Models
 {
     public class APISpectrum
     {
+        [JsonConstructor]
+        public APISpectrum()
+        {
+        }
+
+        public APISpectrum(SqlDataReader reader)
+        {
+            SessionName = reader["session_name"].ToString();
+            SessionIndex = Convert.ToInt32(reader["session_index"]);
+            StartTime = reader["start_time"].ToString();
+            Latitude = Convert.ToDouble(reader["latitude"]);
+            Longitude = Convert.ToDouble(reader["longitude"]);
+            Altitude = Convert.ToDouble(reader["altitude"]);
+            Track = Convert.ToDouble(reader["track"]);
+            Speed = Convert.ToDouble(reader["speed"]);
+            Climb = Convert.ToDouble(reader["climb"]);
+            Livetime = Convert.ToDouble(reader["livetime"]);
+            Realtime = Convert.ToDouble(reader["realtime"]);
+            NumChannels = Convert.ToInt32(reader["num_channels"]);
+            Channels = reader["channels"].ToString();
+            Doserate = Convert.ToDouble(reader["doserate"]);
+        }
+
         [JsonProperty("session_name")]
         public string SessionName { get; set; }
 

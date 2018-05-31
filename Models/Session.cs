@@ -22,11 +22,26 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Web;
 using Newtonsoft.Json;
+using System.Data.SqlClient;
 
 namespace gamma_wsapi.Models
 {
     public class APISession
     {
+        [JsonConstructor]
+        public APISession()
+        {
+        }
+
+        public APISession(SqlDataReader reader)
+        {
+            Name = reader["name"].ToString();
+            IPAddress = reader["ip_address"].ToString();
+            Comment = reader["comment"].ToString();
+            Livetime = Convert.ToDouble(reader["livetime"]);
+            DetectorData = reader["detector_data"].ToString();
+        }
+
         [JsonProperty("name")]
         public string Name { get; set; }
 
