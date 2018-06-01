@@ -251,23 +251,35 @@ namespace gamma_wsapi.Controllers
                 using (SqlConnection conn = new SqlConnection(ConnectionString))
                 {
                     conn.Open();
-                    SqlCommand cmd = new SqlCommand("insert into spectrum values (@SessionName, @SessionIndex, @StartTime, @Latitude, @Longitude, @Altitude, @Track, @Speed, @Climb, @Livetime, @Realtime, @NumChannels, @Channels, @Doserate)", conn);
+                    SqlCommand cmd = new SqlCommand("select count(*) from spectrum where session_name like @SessionName and session_index = @SessionIndex", conn);
                     cmd.Parameters.AddWithValue("@SessionName", spectrum.SessionName);
                     cmd.Parameters.AddWithValue("@SessionIndex", spectrum.SessionIndex);
-                    DateTime dt = DateTime.Parse(spectrum.StartTime, null, DateTimeStyles.RoundtripKind);
-                    cmd.Parameters.Add("@StartTime", SqlDbType.DateTime).Value = dt;
-                    cmd.Parameters.AddWithValue("@Latitude", spectrum.Latitude);
-                    cmd.Parameters.AddWithValue("@Longitude", spectrum.Longitude);
-                    cmd.Parameters.AddWithValue("@Altitude", spectrum.Altitude);
-                    cmd.Parameters.AddWithValue("@Track", spectrum.Track);
-                    cmd.Parameters.AddWithValue("@Speed", spectrum.Speed);
-                    cmd.Parameters.AddWithValue("@Climb", spectrum.Climb);
-                    cmd.Parameters.AddWithValue("@Livetime", spectrum.Livetime);
-                    cmd.Parameters.AddWithValue("@Realtime", spectrum.Realtime);
-                    cmd.Parameters.AddWithValue("@NumChannels", spectrum.NumChannels);
-                    cmd.Parameters.AddWithValue("@Channels", spectrum.Channels);
-                    cmd.Parameters.AddWithValue("@Doserate", spectrum.Doserate);
-                    cmd.ExecuteNonQuery();
+                    object o = cmd.ExecuteScalar();
+                    if(o == null || o == DBNull.Value)                    
+                        return StatusCode(HttpStatusCode.InternalServerError);
+
+                    int c = Convert.ToInt32(o);
+                    if (c == 0)
+                    {
+                        cmd.CommandText = "insert into spectrum values (@SessionName, @SessionIndex, @StartTime, @Latitude, @Longitude, @Altitude, @Track, @Speed, @Climb, @Livetime, @Realtime, @NumChannels, @Channels, @Doserate)";
+                        cmd.Parameters.Clear();
+                        cmd.Parameters.AddWithValue("@SessionName", spectrum.SessionName);
+                        cmd.Parameters.AddWithValue("@SessionIndex", spectrum.SessionIndex);
+                        DateTime dt = DateTime.Parse(spectrum.StartTime, null, DateTimeStyles.RoundtripKind);
+                        cmd.Parameters.Add("@StartTime", SqlDbType.DateTime).Value = dt;
+                        cmd.Parameters.AddWithValue("@Latitude", spectrum.Latitude);
+                        cmd.Parameters.AddWithValue("@Longitude", spectrum.Longitude);
+                        cmd.Parameters.AddWithValue("@Altitude", spectrum.Altitude);
+                        cmd.Parameters.AddWithValue("@Track", spectrum.Track);
+                        cmd.Parameters.AddWithValue("@Speed", spectrum.Speed);
+                        cmd.Parameters.AddWithValue("@Climb", spectrum.Climb);
+                        cmd.Parameters.AddWithValue("@Livetime", spectrum.Livetime);
+                        cmd.Parameters.AddWithValue("@Realtime", spectrum.Realtime);
+                        cmd.Parameters.AddWithValue("@NumChannels", spectrum.NumChannels);
+                        cmd.Parameters.AddWithValue("@Channels", spectrum.Channels);
+                        cmd.Parameters.AddWithValue("@Doserate", spectrum.Doserate);
+                        cmd.ExecuteNonQuery();
+                    }
                 }
             }
             catch

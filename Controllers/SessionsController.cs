@@ -199,13 +199,25 @@ namespace gamma_wsapi.Controllers
                 using (SqlConnection conn = new SqlConnection(ConnectionString))
                 {
                     conn.Open();
-                    SqlCommand cmd = new SqlCommand("insert into session values (@Name, @IPAddress, @Comment, @Livetime, @DetectorData)", conn);
+
+                    SqlCommand cmd = new SqlCommand("select count(*) from session where name like @Name", conn);
                     cmd.Parameters.AddWithValue("@Name", session.Name);
-                    cmd.Parameters.AddWithValue("@IPAddress", session.IPAddress);
-                    cmd.Parameters.AddWithValue("@Comment", session.Comment);
-                    cmd.Parameters.AddWithValue("@Livetime", session.Livetime);
-                    cmd.Parameters.AddWithValue("@DetectorData", session.DetectorData);
-                    cmd.ExecuteNonQuery();
+                    object o = cmd.ExecuteScalar();
+                    if (o == null || o == DBNull.Value)
+                        return StatusCode(HttpStatusCode.InternalServerError);
+
+                    int c = Convert.ToInt32(o);
+                    if (c == 0)
+                    {
+                        cmd.CommandText = "insert into session values (@Name, @IPAddress, @Comment, @Livetime, @DetectorData)";
+                        cmd.Parameters.Clear();
+                        cmd.Parameters.AddWithValue("@Name", session.Name);
+                        cmd.Parameters.AddWithValue("@IPAddress", session.IPAddress);
+                        cmd.Parameters.AddWithValue("@Comment", session.Comment);
+                        cmd.Parameters.AddWithValue("@Livetime", session.Livetime);
+                        cmd.Parameters.AddWithValue("@DetectorData", session.DetectorData);
+                        cmd.ExecuteNonQuery();
+                    }
                 }
             }    
             catch(Exception ex)
